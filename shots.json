@@ -1,0 +1,6 @@
+[
+  { "name": "1-cover.jpg", "query": "?shot=cover", "quality": 86 },
+  { "name": "2-gates.jpg", "query": "?shot=gates", "quality": 86 },
+  { "name": "3-cockpit.jpg", "query": "?shot=cockpit", "quality": 86 },
+  { "name": "4-approach.jpg", "query": "?shot=approach", "quality": 86 }
+]
