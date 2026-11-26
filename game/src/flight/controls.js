@@ -4,6 +4,10 @@
 
 const PITCH_KEYS = ['KeyW', 'ArrowUp', 'KeyS', 'ArrowDown'];
 
+// A drag smaller than the dead zone leaves the stick centred, and past it the deflection starts from
+// zero instead of jumping to the threshold: a steady hand holds a straight line without fighting it.
+const applyDeadZone = (value, zone) => (Math.abs(value) < zone ? 0 : Math.sign(value) * ((Math.abs(value) - zone) / (1 - zone)));
+
 export class Controls {
   constructor(canvas) {
     this.canvas = canvas;
@@ -12,12 +16,19 @@ export class Controls {
     this.throttle = 0.62;
     this.mouseRoll = 0;
     this.mousePitch = 0;
+    this.mouseSensitivity = 12;
+    this.deadZone = 0.06;
     this.dragging = false;
     this.usesMouse = false;
 
     window.addEventListener('keydown', (event) => this.onKeyDown(event));
     window.addEventListener('keyup', (event) => this.keys.delete(event.code));
-    window.addEventListener('blur', () => this.keys.clear());
+    window.addEventListener('blur', () => {
+      this.keys.clear();
+      this.dragging = false;
+      this.mouseRoll = 0;
+      this.mousePitch = 0;
+    });
 
     canvas.addEventListener('mousedown', (event) => {
       this.dragging = true;
@@ -32,8 +43,8 @@ export class Controls {
     });
     window.addEventListener('mousemove', (event) => {
       if (!this.dragging) return;
-      this.mouseRoll = Math.max(-1, Math.min(1, event.movementX / 12));
-      this.mousePitch = Math.max(-1, Math.min(1, -event.movementY / 12));
+      this.mouseRoll = Math.max(-1, Math.min(1, event.movementX / this.mouseSensitivity));
+      this.mousePitch = Math.max(-1, Math.min(1, -event.movementY / this.mouseSensitivity));
     });
     canvas.addEventListener(
       'wheel',
@@ -91,8 +102,8 @@ export class Controls {
     if (this.held('ShiftLeft', 'ShiftRight')) this.throttle = Math.min(1, this.throttle + 0.9 / 60);
     if (this.held('ControlLeft', 'ControlRight')) this.throttle = Math.max(0, this.throttle - 0.9 / 60);
     if (this.dragging) {
-      roll += this.mouseRoll;
-      pitch += this.mousePitch;
+      roll += applyDeadZone(this.mouseRoll, this.deadZone);
+      pitch += applyDeadZone(this.mousePitch, this.deadZone);
     }
     return {
       pitch: Math.max(-1, Math.min(1, pitch)),
